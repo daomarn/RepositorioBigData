@@ -1,0 +1,70 @@
+---
+title: "Actividad Colaborativa M3U1"
+author: "Daniel Nuñez"
+date: "22 de noviembre de 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Limpieza del entorno de trabajo
+```{r}
+rm(list = ls())
+```
+# Creación de directorio raiz para el ejercicio
+``` {r DirActual}
+dirActual<-getwd()
+if(!file.exists("../Actividad_Colaborativa_M3")) {dir.create("../Actividad_Colaborativa_M3")}
+```
+# Creación de la estructura de directorios
+``` {r directorios}
+if(!file.exists("./EstudioPreliminar")) {dir.create("./EstudioPreliminar")}
+if(!file.exists("./EntregaFinal")) {dir.create("./EntregaFinal")}
+if(!file.exists("./EstudioPreliminar/MessyDataSets")) {dir.create("./EstudioPreliminar/MessyDataSets")}
+if(!file.exists("./EntregaFinal/TidyDataSets")) {dir.create("./EntregaFinal/TidyDataSets")}
+```
+#Descarga de fichero a analizar en la carpeta MessyDatasets y su fecha de descarga
+``` {r Fichero, echo=TRUE}
+urlFile <- "https://aql.datapress.com/leeds/dataset/council-energy-consumption/01042013-to-31032014-kwh-co2.csv"
+download.file(urlFile,destfile = "./EstudioPreliminar/MessyDataSets/EnergyConsumption.csv", method = "libcurl")
+fechaDescarga <- date()
+fechaDescarga
+```
+#Guardamos la tabla en una variable para su tratamiento
+```{r}
+ConsumoEnergia <- read.table("./EstudioPreliminar/MessyDataSets/EnergyConsumption.csv", row.names = NULL, sep=",", header = TRUE)
+```
+
+#Verificar estado de los datos
+```{r}
+names(ConsumoEnergia)
+```
+#La columna 1 a 5 tienes los mismos datos para todas las filas. Las eliminamos
+```{r}
+ConsumoEnergia <- ConsumoEnergia[ , -c(1:5)]
+```
+#Separar la columna "Site.Name" en columnas "Distrito" y "Direccion" por medio del separador "-"
+```{r, echo=FALSE}
+library(tidyr)
+ConsumoEnergia <- separate(ConsumoEnergia, col = Site.Name, into = c("Distrito","Direccion"),sep = "-")
+```
+#Porcentaje de registros con valores "0"
+```{r}
+SinLectura <- sum(ConsumoEnergia$Gas.Cons..kWh.== 0 & ConsumoEnergia$Elect.CO2..tonnes.== 0 & ConsumoEnergia$Gas.CO2..tonnes.== 0 & ConsumoEnergia$Total.CO2..tonnes. == 0 & ConsumoEnergia$Elect.Cons..kWh.== 0 & ConsumoEnergia$Total.kWh == 0)
+rowsConsumoEnergia <-nrow(ConsumoEnergia)
+PorcentajeSinLectura <- SinLectura/rowsConsumoEnergia *100
+PorcentajeSinLectura
+```
+#Registros con valores diferentes de 0
+```{r}
+registros <- ConsumoEnergia[!(ConsumoEnergia$Elect.Cons..kWh. == 0), ]
+```
+#Registros con una lectura correcta. Es decir que el la diferencia del Total de KWH menos el gas y la ectricidad sea 0
+
+```{r}
+registros$diferencia <- registros$Total.kWh -registros$Gas.Cons..kWh.-registros$Elect.Cons..kWh.
+registrosV <- registros[!(registros$diferencia = 0),]
+registrosCorrectos <- registrosV[1:8]
+```
